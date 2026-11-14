@@ -1,3 +1,4 @@
+%%writefile app.py
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -49,6 +50,51 @@ try:
 except Exception as e:
     st.error(f"Error loading datasets. Please make sure 'income.csv', 'marriages_age.csv', and 'crime.csv' are in the same folder. {e}")
     st.stop()
+
+# Sidebar Year Selector for Summary Metric Boxes
+all_years = sorted(merged_yearly_df['year'].unique())
+selected_year = st.sidebar.selectbox("Select Year for Summary Metrics", all_years, index=len(all_years)-1)
+
+# Filter data for metrics
+year_data = merged_yearly_df[merged_yearly_df['year'] == selected_year]
+
+# Safely extract and convert to standard Python types
+if not year_data.empty:
+    raw_income = year_data['avg_income'].values[0]
+    raw_marriages = year_data['total_marriages'].values[0]
+    raw_prisoners = year_data['total_prisoners'].values[0]
+    
+    avg_inc_val = float(raw_income) if not pd.isna(raw_income) else "N/A"
+    total_marr_val = int(raw_marriages) if not pd.isna(raw_marriages) else "N/A"
+    total_pris_val = int(raw_prisoners) if not pd.isna(raw_prisoners) else "N/A"
+else:
+    avg_inc_val = "N/A"
+    total_marr_val = "N/A"
+    total_pris_val = "N/A"
+
+# Summary KPI Boxes Row
+st.markdown("### 📊 Key Performance Summary Metrics")
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    if isinstance(avg_inc_val, (int, float)):
+        st.metric(label=f"National Avg Income ({selected_year})", value=f"RM {avg_inc_val:,.2f}")
+    else:
+        st.metric(label=f"National Avg Income ({selected_year})", value=str(avg_inc_val))
+
+with col2:
+    if isinstance(total_marr_val, (int, float)):
+        st.metric(label=f"Total Marriages ({selected_year})", value=f"{total_marr_val:,}")
+    else:
+        st.metric(label=f"Total Marriages ({selected_year})", value=str(total_marr_val))
+
+with col3:
+    if isinstance(total_pris_val, (int, float)):
+        st.metric(label=f"Total Prisoners ({selected_year})", value=f"{total_pris_val:,}")
+    else:
+        st.metric(label=f"Total Prisoners ({selected_year})", value=str(total_pris_val))
+
+st.write("--- ")
 
 # Create layout tabs
 tab1, tab2, tab3 = st.tabs(["Income vs Prisoners", "Marriages vs Prisoners", "Correlation Heatmap"])
